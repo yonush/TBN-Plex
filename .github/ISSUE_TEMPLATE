@@ -1,0 +1,17 @@
+<a href="https://discord.gg/Q3cBvK9">Try the TBN-Plex Discord Channel for realtime troubleshooting before opening a case!!</a>
+
+Before Opening a bug case some basic troubleshooting information is necessary:
+1- What Happened:
+1a- What you expected to happen:
+
+2- TBN-Plex Version:
+
+3- Command entered/ran:
+
+4- Error Message/Output:
+
+5- If schdule/automation, what happened when you manually tried the action/ran the schedule script at a scheduled time? Provide the output here:
+
+6- If applicable, does the media item exist in your library, and how its name formatted in your Plex Web?
+
+7- If cron related, what do your TBN-Plex cron related entries look like?
