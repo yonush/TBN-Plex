@@ -124,3 +124,4 @@ addschedule,Adds item to the schedule,addschedule "setplaymode normal" 6:00 PM" 
 viewschedules,Lists currently scheduled items,viewschedules
 removeschedule,Removes the scheduled item at the specified day/date and time,removeschedule "7:00AM" sunday
 smartplist,Generates a playlist on your plex server (add \"-p\" flag) or a holidaymode playlist (no \"-p\" flag) using the specified words.,smartplist christmas
+updatechecker,Checks to see if you are running the most recent TBN-Plex files,updatechecker
