@@ -121,7 +121,14 @@ setqueuetoplex,Enable/Disable the automatic plex playlist feature.,setqueuetople
 backuptvcounts,Backs up the tv count entries,backuptvcounts
 restoretvcounts,Restores the tv count entires.Note: tvcounts must be in your /hasystem directory.,restoretvcounts
 addschedule,Adds item to the schedule,addschedule "setplaymode normal" 6:00 PM" today
-viewschedules,Lists currently scheduled items,viewschedules
+viewschedules,Lists currently scheduled items. Can use -d for date filter -a for action filter and -t for time,viewschedules
 removeschedule,Removes the scheduled item at the specified day/date and time,removeschedule "7:00AM" sunday
 smartplist,Generates a playlist on your plex server (add \"-p\" flag) or a holidaymode playlist (no \"-p\" flag) using the specified words.,smartplist christmas
 updatechecker,Checks to see if you are running the most recent TBN-Plex files,updatechecker
+setautoupdate,Change the AUTOUPDATE value. This is ON or OFF,setautoupdate ON
+getautoupdate,Gets the current AUTOUPDATE value,getautoupdate
+listcollections,Lists the Collections found in your library. NOTE: You  must do a "getallcollections" before this will return results,listcollections
+collectiondetails,Gets the movies in the given Collection,collectiondetails "The Die Hard Collection"
+getallcollections,Scans your movie library and compares it to themoviedb to find the collections in your library,getallcollections
+getlikemovie,Checks themoviedb for similar movies to the given movie. NOTE: supports "-b" flag to create a smartblock using the results,getlikemovie "Lethal Weapon" -b
+getcollection,Gets the Collection associated with a given movie. NOTE: supports "-b" flag to create a smartblock using the results and "-p" to create a smartplaylist on your Plex server,getcollection "Die Hard" -p
