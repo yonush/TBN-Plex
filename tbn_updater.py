@@ -183,7 +183,7 @@ if "Linux" in ostype:
 			url = "https://raw.githubusercontent.com/amazingr4b/TBN-Plex/master/tbn_schedule.py"
 			newfile = http.request('GET', url, preload_content=False)
 			newfile = writemehome + str(newfile.data)
-			print newfile
+			#print newfile
 			with open(filex1, 'wb') as file:
 				file.write(newfile)
 			file.close()
