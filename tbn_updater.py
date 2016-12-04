@@ -55,7 +55,15 @@ def worklist(thearray):
 				Error = "Invalid Selection. Please Try Again."
 				mmin = mmin - 10
 
-http = urllib3.PoolManager()
+try:
+	import certifi
+	http = urllib3.PoolManager(
+    cert_reqs='CERT_NONE', # Force certificate check.
+    ca_certs=certifi.where(),  # Path to the Certifi bundle.
+	)
+except Exception:
+	http = urllib3.PoolManager()
+	print ("Note: You can install the \"certifi\" library to resolve certificate error notices.")
 
 try:
 	input = raw_input
@@ -164,6 +172,24 @@ if "Linux" in ostype:
 		except Exception:
 			print ("Failed to add cronjob. see add_to_cron.py for recommended job.\n")
 			updatecheck = "fail"
+	
+		try:
+			filex1 = homedir + "tbn_schedule.py"
+			os.remove(filex1)
+			print ("Removed tbn_schedule.py. Updating Now.")
+		except Exception:
+			pass
+		try:
+			url = "https://raw.githubusercontent.com/amazingr4b/TBN-Plex/master/tbn_schedule.py"
+			newfile = http.request('GET', url, preload_content=False)
+			newfile = writemehome + str(newfile.data)
+			print newfile
+			with open(filex1, 'wb') as file:
+				file.write(newfile)
+			file.close()
+			print ("tbn_schedule.py successfully updated.")
+		except IOError:
+			print ("warning tbn_schedule.py does not exist. Scheduling will not work.")
 
 		
 
