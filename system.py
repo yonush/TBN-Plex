@@ -27,6 +27,8 @@ global play
 global pcmd
 global pcount
 global ttlchk
+global commandcheck
+commandcheck = "no"
 
 ttlchk = ""
 
@@ -262,7 +264,36 @@ def maxaudio():
         plexlogin()
         client.setVolume(100, 'Video')
 
+def schedchecker(command):
+	global commandcheck
+
+	command = command.replace("system.py schedchecker ","")
+	cmd = "SELECT name FROM help"
+	cur.execute(cmd)
+	xcmds = cur.fetchall()
+	cmds = []
+	for item in xcmds:
+		cmds.append(item[0])
+	ccheck = "no"
+	for itm in cmds:
+		if itm in command:
+			print ("Pass: Commands")
+			commandcheck = "yes"
+			return command
+	if "no" in ccheck:	
+		say = titlecheck(command)
+		if ("ERROR:" in say):
+			return ("ERROR: Command Fail. " + command + " does not appear to be valid. Check and try again.")
+		else:
+			print ("Pass: Media")
+			return ("\\\"" + say + "\\\"")
+	
+
 def addschedule(action, time, day):
+	global commandcheck
+	achk = schedchecker(action)
+	if "ERROR:" in achk:
+		return achk
 	try:
 		cur.execute("SELECT * FROM SCHEDULES")
 	except sqlite3.OperationalError:
@@ -287,6 +318,8 @@ def addschedule(action, time, day):
 			try:
 				adme = adme + item + ";"
 			except NameError:
+				if ((len(addme) == 1) and ("yes" not in commandcheck)):
+					item = "\"" + item + "\""
 				adme = item + ";"
 	cur.execute("INSERT INTO SCHEDULES VALUES(?,?,?)",(adme, time, day))
 	sql.commit()
@@ -4842,6 +4875,23 @@ def setplaymode(mode):
 	for item in checks:
 		if item in mode:
 			setcheck = "pass"
+	if ("collection." in mode):
+		mode = mode.replace("collection.","")
+		cmd = "SELECT * FROM Collections WHERE name LIKE \"" + mode + "\""
+		cur.execute(cmd)
+		if not cur.fetchone():
+			return ("Error: " + mode + " not found as an available Collection.")
+		sys.argv.append("-b")
+		cur.execute(cmd)
+		mve = cur.fetchone()
+		mve = mve[1]
+		mve = mve.split(";")
+		mve = mve[0]
+		getcollection(mve)
+		say = setplaymode("smartblock")
+		return say
+		
+		
 
 	if ("holiday." in mode):
 		hcheck = mode.replace("holiday.","")
@@ -7112,25 +7162,44 @@ def getlikemovie(xmovie):
 				itm = "ERROR"
 			ttlchk = "no"
 			if (("ERROR" not in itm) and (itm not in cfound)):
-				itm = itm.replace("movie.","The Movie ")
 				cfound.append(itm)
 			ccnt = ccnt + 1
 		if len(cfound) > 0:
+			if ("-b" in sys.argv):
+				bcnt = 0
+				max = int(len(cfound))-1
+				while bcnt <= max:
+					print cfound[bcnt]
+					if bcnt == 0:
+						removeblock("smartblock")
+						addblock("smartblock",cfound[bcnt])
+					else:
+						addtoblock("smartblock",cfound[bcnt])
+					bcnt = bcnt + 1
+					ttlchk = "no"
+				print ("\nSuccessfully Created smartblock with the results.\n")
 			print ("The following similar movies were located in your library:\n")
 			for ite in cfound:
+				ite = ite.replace("movie.","The Movie ")
 				print ite
 		else:
 			print ("No similar items found in your library. Here are the similar movies found that are not in your library:\n")
 			for thy in found:
+				thy = thy.replace("movie.","The Movie ")
 				print thy
 		return ("\nDone.")
 	else:
 		return ("Error: Nothing similar found to: " + xmovie + ".")
 
 def getcollection(xmovie):
+	global ttlchk
 	collection = []
 	collectionx = []
-	import tmdbsimple as tmdb
+	try:
+		import tmdbsimple as tmdb
+	except Exception:
+		print ("Error: tmdb library not found. Install and try again. \"pip install tmdbsimple\"")
+		return ("ERROR: tmdb library not found.")
 	tmdb.API_KEY = "ff44b56e7ea4641918abc6cf46d19a1c"
 	search = tmdb.Search()
 	response = search.movie(query=xmovie)
@@ -7193,6 +7262,44 @@ def getcollection(xmovie):
 		#print collection
 		collectionplist(collection)
 		print ("Successfully added the following to the TBNSmartPlist:\n")
+	if ("-b" in sys.argv):
+		#newstuff
+		ocoll = collection
+                collection = []
+                ccnt = 0
+		dates = []
+                for item in ocoll:
+                        item = item.split(",")
+                        date = item[1].strip()
+			date = date.split("-")
+			date = date[0]
+			if date not in dates:
+				dates.append(date)
+		collection = []
+		dcnt = 0
+		dates.sort()
+		for itm in dates:
+			for item in ocoll:
+				if itm in item:
+					addme = item.split(",")
+					addme = addme[0]
+					addme = "movie."+addme
+					collection.append(addme)
+                #print ylidy
+		collectionx = collection
+		#endnewstuff
+		max = int(len(collectionx))-1
+		ccnt = 0
+		while ccnt <= max:
+			if ccnt == 0:
+				removeblock("smartblock")
+				addblock("smartblock",collectionx[ccnt])
+			else:
+				addtoblock("smartblock",collectionx[ccnt])
+			ccnt = ccnt + 1
+			ttlchk = "no"
+		if ("getcollection" in show):
+			print ("Successfully created a smartblock with the following:")
 	return collectionx
 
 def collectiontitlecheck(title):
@@ -7241,7 +7348,155 @@ def collectionplist(array):
 		pass
 	if (("-p" in sys.argv) and (len(plist)>0)):
 		plex.createPlaylist(plname,plist)
-	
+
+def collectiondetails(xname):
+	command = "SELECT * FROM Collections WHERE name LIKE \"" + xname + "\""
+	cur.execute(command)
+	if not cur.fetchone():
+		return("Error: " + xname + " not found as a Collection in your Collection table.")
+	cur.execute(command)
+	found = cur.fetchone()
+	ttls = found[1]
+	ttls = ttls.split(";")
+	for item in ttls:
+		if item == "":
+			pass
+		else:
+			print (item)
+	return ("\nDone.")
+
+def listcollections(cname):
+	if cname == "none":
+		command = "SELECT name FROM Collections"
+	else:
+		command = "SELECT name FROM Collections WHERE name LIKE \"%" + cname + "%\""
+	cur.execute(command)
+	if not cur.fetchall():
+		return ("Error: No Collections found. Run \"getallcollections\" to find Collections in your library.")
+	cur.execute(command)
+	clist = cur.fetchall()
+	cxlist = []
+	for item in clist:
+		cxlist.append(item[0])
+	if ((len(cxlist) <30) or ("-l" in sys.argv)):
+		worklist(cxlist)
+	else:
+		wlistcolumns(cxlist)
+	return ("\nDone.")
+
+def getcollections():
+	import tmdbsimple as tmdb
+	tmdb.API_KEY = "ff44b56e7ea4641918abc6cf46d19a1c"
+	search = tmdb.Search()
+	print ("WARNING: This action will take a while to process. It is recommended you run this during the off hours.")
+	colcmd = "SELECT * FROM Collections"
+	try:
+		cur.execute(colcmd)
+	except sqlite3.OperationalError:
+		cur.execute("CREATE TABLE IF NOT EXISTS Collections(name TEXT, items TEXT)")
+		sql.commit()
+		print ("Successfully added Collections table.")
+
+	cur.execute("DELETE FROM Collections")
+	sql.commit()
+	cur.execute("SELECT Movie FROM Movies")
+	mlist = cur.fetchall()
+	mvlist = []
+	for item in mlist:
+		if item[0] not in mvlist:
+			mvlist.append(item[0])
+
+	colcount = 0
+	print (len(mvlist))
+	for item in mvlist:
+		collection = []
+		collectionx = []
+		#print item
+		thettl = item
+		fcheck = "no"
+		try:
+			response = search.movie(query=item)
+			sset = "no"
+			for s in search.results:
+				if ((s['title'] == item) and (sset == "no")):
+					try:
+						mid = s['id']
+						movie = tmdb.Movies(mid)
+						response = movie.info()
+						cid = response['belongs_to_collection']
+						#print cid['id']
+						sset = "yes"
+					except Exception:
+						#print ("fail")
+						pass
+
+			try:
+				movie = tmdb.Movies(mid)
+			except Exception:
+				fcheck = "yes"
+			if fcheck == "no":
+				response = movie.info()
+				cid = response['belongs_to_collection']
+				if not cid:
+					pass
+				else:
+					cid = cid['id']
+					coll = tmdb.Collections(cid)
+					colld = coll.info()
+					for item in colld['parts']:
+						writeme = item['original_title'] + "," + item['release_date']
+						collection.append(writeme)
+						collectionx.append(item['original_title'])
+					ocoll = collection
+					collection = []
+					ccnt = 0
+					for item in ocoll:
+						item = item.split(",")
+						date = item[1].strip()
+						title = item[0]
+						date = date.split("-")
+						date = date[0]
+						if ccnt == 0:
+							ylidy = title.strip() + ","
+						else:
+							cdate = ocoll[ccnt-1]
+							cdate = cdate.split(",")
+							cdate = cdate[1].strip()
+							cdate = cdate.split("-")
+							cdate = cdate[0].strip()
+							#print date
+							#print cdate
+							if cdate > date:
+								ylidy = title.strip() + "," + ylidy
+							else:
+								ylidy = ylidy + "," + title.strip()
+						ccnt = ccnt + 1
+					#print ylidy
+					collection = ylidy.split(",")
+					colname = colld['name']
+					for item in collection:
+						if item == "":
+							pass
+						else:
+							try:
+								newcol = newcol + ";" + item.strip()
+							except NameError:
+								newcol = item.strip()
+					if ";" not in newcol:
+						newcol = newcol + ";"
+					cur.execute("SELECT * FROM Collections WHERE name LIKE \"" + colname + "\"")
+					if not cur.fetchone():
+						cur.execute("INSERT INTO Collections VALUES (?,?)",(colname, newcol))
+						sql.commit()
+						print ("Found Collection in your library: " + colld['name'])
+					del newcol
+			del collection
+			del collectionx
+					#print collection
+		except Exception:
+			#print ("Error, skipping " + thettl + ".")
+			pass
+	return ("\nDone.")
 
 def wait(number):
 	try:
@@ -7300,7 +7555,7 @@ def timechecker(thing):
 
 
 def versioncheck():
-	version = "3.05exp"
+	version = "3.05exp2"
 	return version
 	
 
@@ -7331,10 +7586,28 @@ try:
                         say
                 except NameError:
                         say = "Sorry, but that entry was not found in the help table. Run \"updatehelp\" and try again if you have not updated recently."
+	elif ("listcollections" in show):
+		try:
+			cname = str(sys.argv[2])
+		except IndexError:
+			cname = "none"
+		say = listcollections(cname)
+	elif ("schedchecker" in show):
+		for item in sys.argv:
+			try:
+				say = say + " " + item
+			except NameError:
+				say = item
+		say = schedchecker(say)
+	elif ("collectiondetails" in show):
+		col = sys.argv[2]
+		say = collectiondetails(col)
+	elif ("getallcollections" in show):
+		say = getcollections()
 	elif ("getcollection" in show):
 		movie = str(sys.argv[2])
 		sme = getcollection(movie)
-		if ("Error" in sme):
+		if (("Error" in sme) or ("ERROR" in sme)):
 			say = sme
 		else:
 			try:
@@ -8469,6 +8742,7 @@ try:
 		say = versioncheck()
 	else:
 		#def playme
+		SLEEPTIME = 5
 		pcmd = "playme"
 		plexlogin()
 		show = checkcustomtables(show)
