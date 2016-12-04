@@ -1428,7 +1428,7 @@ def setautoupdate(val):
 		val = "OFF"
 	else:
 		return ("ERROR: You must specify \"YES\" or \"NO\" to use this action.")
-	cur.execute("DELETE FROM States WHERE State LIKE \"AUTOUPDATE\"")
+	cur.execute("DELETE FROM States WHERE Option LIKE \"AUTOUPDATE\"")
 	sql.commit()
 	cur.execute("INSERT INTO States VALUES (?,?)",("AUTOUPDATE",val))
 	sql.commit()
