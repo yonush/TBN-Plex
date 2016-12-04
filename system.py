@@ -1411,6 +1411,68 @@ def updatehelp():
 	os.system("rm -rf " + hfile)
 	print ("Help file removed now that DB populated.")
 
+def getautoupdate():
+	command = "SELECT State FROM States WHERE Option LIKE \"AUTOUPDATE\""
+	cur.execute(command)
+	if not cur.fetchone():
+		cur.execute("INSERT INTO States VALUES (?,?)",("AUTOUPDATE","OFF"))
+		sql.commit()
+	cur.execute(command)
+	val = cur.fetchone()[0]
+	return val
+
+def setautoupdate(val):
+	if (val.lower() == "on"):
+		val = "ON"
+	elif (val.lower() == "off"):
+		val = "OFF"
+	else:
+		return ("ERROR: You must specify \"YES\" or \"NO\" to use this action.")
+	cur.execute("DELETE FROM States WHERE State LIKE \"AUTOUPDATE\"")
+	sql.commit()
+	cur.execute("INSERT INTO States VALUES (?,?)",("AUTOUPDATE",val))
+	sql.commit()
+	return ("Auto Update Status has been set to: " + val)
+
+def updatechecker():
+	curver = versioncheck()
+	print ("System Version: " + curver)
+	getme = "https://raw.githubusercontent.com/amazingr4b/TBN-Plex/master/system.py"
+	response = http.urlopen('GET', getme, preload_content=False).read()
+	response = str(response)
+	postver = response.split("version = \"")
+	postver = postver[1]
+	postver = postver.split("\"")
+	postver = postver[0]
+	print ("Posted System Version: " + postver)
+	command = "SELECT State FROM States WHERE Option LIKE \"AUTOUPDATE\""
+	cur.execute(command)
+	if not cur.fetchone():
+		cur.execute("INSERT INTO States VALUES (?,?)",("AUTOUPDATE","OFF"))
+		sql.commit()
+		print ("No Automatic Update setting found. Setting to: OFF")
+	cur.execute(command)
+	upstate = cur.fetchone()[0]
+	if ("OFF" not in upstate):
+		if curver.strip() != postver.strip():
+			print ("Executing Update Script Now.")
+			ufile = homedir + "tbn_updater.py"
+			try:
+				os.remove(ufile)
+			except Exception:
+				pass
+			cmd = "wget -O \"" + ufile + "\" \"https://raw.githubusercontent.com/amazingr4b/TBN-Plex/master/tbn_updater.py\""
+			os.system(cmd)
+			print ("Successfully acquired update script.")
+			cmd = "python " + ufile
+			print ("Running Update Now.")
+			os.system(cmd)
+		else:
+			print ("No action necessary.")
+	else:
+		print ("No Update Action Taken.")
+	
+
 def explainblock(block):
 	blist = getblockpackagelist()
 	for item in blist:
@@ -7058,6 +7120,8 @@ def statuscheck():
 	print ("Commercial Injection is: " + ccheck)
 	queuetpl = qtpl()
 	print ("Queue To Playlist is: " + queuetpl)
+	autou = getautoupdate()
+	print ("Automatic Update Status is: " + autou)
 
 def smartplist(thetext):
 	print ("\nWarning: This action may take a few minutes depending on the size of your library.\n")
@@ -7558,7 +7622,7 @@ def timechecker(thing):
 
 
 def versioncheck():
-	version = "3.05exp2"
+	version = "3.06"
 	return version
 	
 
@@ -7684,9 +7748,16 @@ try:
                 restoremoviedb()
                 say = "Done."
 	elif ("updatehelp" in show):
-		print (1)
 		updatehelp()
 		say = "Done."
+	elif ("updatechecker" in show):
+		updatechecker()
+		say = "\nDone."
+	elif ("setautoupdate" in show):
+		val = sys.argv[2]
+		say = setautoupdate(val)
+	elif ("getautoupdate" in show):
+		say = getautoupdate()
 	elif ("playmusic" in show):
 		try:
 			artist = str(sys.argv[2])
