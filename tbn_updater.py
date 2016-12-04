@@ -5,8 +5,10 @@ import subprocess
 import sqlite3
 import urllib3
 import platform
-
-#urllib3.disable_warning()
+try:
+	urllib3.disable_warnings()
+except Exception:
+	pass
 
 def worklist(thearray):
 	if int(len(thearray) == 0):
@@ -58,12 +60,12 @@ def worklist(thearray):
 try:
 	import certifi
 	http = urllib3.PoolManager(
-    cert_reqs='CERT_NONE', # Force certificate check.
-    ca_certs=certifi.where(),  # Path to the Certifi bundle.
+    	cert_reqs='CERT_NONE', # Force certificate check.
+    	ca_certs=certifi.where(),  # Path to the Certifi bundle.
 	)
 except Exception:
 	http = urllib3.PoolManager()
-	print ("Note: You can install the \"certifi\" library to resolve certificate error notices.")
+	#print ("Note: You can install the \"certifi\" library to resolve certificate error notices.")
 
 try:
 	input = raw_input
