@@ -96,9 +96,8 @@ if "Linux" in ostype:
 
 		print (sayme)
 		file0 = homedir + "add_to_bash.py"
-		cmd = "rm " + file0
 		try:
-			os.system(cmd)
+			os.remove(file0)
 		except Exception:
 			pass
 		print ("Successfully removed add_to_bash.py. Getting latest file.")
@@ -116,9 +115,8 @@ if "Linux" in ostype:
 		
 		#get alias file
 		file10 = homedir + "aliases"
-        cmd = "rm " + file10
 		try:
-			os.system(cmd)
+			os.remove(file10)
 		except Exception:
 			pass
 		print ("Successfully removed aliases. Getting latest file.")
@@ -145,9 +143,8 @@ if "Linux" in ostype:
 
 		#get add_to_cron.py
 		file00 = homedir + "add_to_cron.py"
-        cmd = "rm " + file00
 		try:
-			os.system(cmd)
+			os.remove(file00)
 		except Exception:
 			pass
 		print ("Successfully removed add_to_cron.py. Getting latest file.")
@@ -191,7 +188,7 @@ else:
 file5 = homedir + "system.py"
 try:
 	os.remove(file5)
-	print (Successfully removed system.py.")
+	print ("Successfully removed system.py.")
 except Exception:
 	pass
 
@@ -266,6 +263,8 @@ file8 = homedir + "upddatedb_pi.py"
 try:
 	os.remove(file8)
 	print ("Removed upddatedb_pi.py. Updating now.")
+except Exception:
+	pass
 	
 try:
 	url = "https://raw.githubusercontent.com/amazingr4b/TBN-Plex/master/upddatedb_pi.py"
