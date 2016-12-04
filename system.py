@@ -290,6 +290,9 @@ def schedchecker(command):
 	
 
 def addschedule(action, time, day):
+	action = action.strip()
+	time = time.strip()
+	day = day.strip()
 	global commandcheck
 	achk = schedchecker(action)
 	if "ERROR:" in achk:
