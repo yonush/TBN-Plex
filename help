@@ -57,10 +57,10 @@ replacewildcard,designates the current wild card show to be replaced by the spec
 settonightsmovie,Sets tonights movie to the specified movie. Note: used for random movie items in blocks., settongitsmovie "tremors"
 skipback,Skips back in the current feature 30 seconds.,skipback
 skipahead,Skips ahead in the current feature 30 seconds.,skipahead
-muteaudio.,Mutes audio on your video client.,muteaudio
+muteaudio,Mutes audio on your video client.,muteaudio
 unmuteaudio.,unmutes audio on your video client.,unmuteaudio
-mutemusic.,Mutes audio on your music client.,mutemusic
-unmutemusic.,unmutes audio on your music client.,unmutemusic
+mutemusic,Mutes audio on your music client.,mutemusic
+unmutemusic,unmutes audio on your music client.,unmutemusic
 randommovieblock,Generates a random movie block of the specified genre.,randommovieblock action
 randomtvblock,Generates a random show block of the specified genre.,randomtvblock comedy
 listmoviegenres,Lists the movie genres found in your library.,listmoviegenres
@@ -132,3 +132,4 @@ collectiondetails,Gets the movies in the given Collection,collectiondetails "The
 getallcollections,Scans your movie library and compares it to themoviedb to find the collections in your library,getallcollections
 getlikemovie,Checks themoviedb for similar movies to the given movie. NOTE: supports "-b" flag to create a smartblock using the results,getlikemovie "Lethal Weapon" -b
 getcollection,Gets the Collection associated with a given movie. NOTE: supports "-b" flag to create a smartblock using the results and "-p" to create a smartplaylist on your Plex server,getcollection "Die Hard" -p
+availableactions,Lists the actions supported by the system.py file,availableactions -l
