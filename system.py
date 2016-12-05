@@ -277,7 +277,7 @@ def schedchecker(command):
 	ccheck = "no"
 	for itm in cmds:
 		if itm in command:
-			print ("Pass: Commands")
+			#print ("Pass: Commands")
 			commandcheck = "yes"
 			return command
 	if "no" in ccheck:	
@@ -285,7 +285,7 @@ def schedchecker(command):
 		if ("ERROR:" in say):
 			return ("ERROR: Command Fail. " + command + " does not appear to be valid. Check and try again.")
 		else:
-			print ("Pass: Media")
+			#print ("Pass: Media")
 			return ("\\\"" + say + "\\\"")
 	
 
@@ -351,6 +351,10 @@ def argprocessor(thearg):
 			elif thearg in thing:
 				pass
 			else:
+				achk = schedchecker(thing)
+				if "ERROR" not in achk:
+					return achk
+				#print achk
 				sch.append(thing)
 		if len(sch) == 1:
 			xshow = sch[0]
@@ -1428,7 +1432,7 @@ def setautoupdate(val):
 		val = "OFF"
 	else:
 		return ("ERROR: You must specify \"YES\" or \"NO\" to use this action.")
-	cur.execute("DELETE FROM States WHERE Option LIKE \"AUTOUPDATE\"")
+	cur.execute("DELETE FROM States WHERE State LIKE \"AUTOUPDATE\"")
 	sql.commit()
 	cur.execute("INSERT INTO States VALUES (?,?)",("AUTOUPDATE",val))
 	sql.commit()
@@ -7620,9 +7624,21 @@ def timechecker(thing):
 		thedate = thing
 	return thedate
 
+def availableactions(actn):
+	if actn == "none":
+		command = "SELECT * FROM help ORDER BY name ASC"
+	else:
+		command = "SELECT * FROM help WHERE name LIKE \"%" + actn + "%\""
+	cur.execute(command)
+	found = cur.fetchall()
+	actns = []
+	for item in found:
+		actns.append(item[0])
+	return actns
+
 
 def versioncheck():
-	version = "3.06"
+	version = "3.06a"
 	return version
 	
 
@@ -7809,6 +7825,19 @@ try:
 			say = wlistcolumns(say)
 		except IndexError:
 			say = "Error: you must supply an album to use this command."
+	elif ("availableactions" in show):
+		try:
+			if sys.argv[2] == "-l":
+				actn = "none"
+			else:
+				actn = sys.argv[2]
+		except IndexError:
+			actn = "none"
+		say = availableactions(actn)
+		if ("-l" not in sys.argv):
+			say = wlistcolumns(say)
+		else:
+			say = worklist(say)
 	elif ("getcustomtitle" in show):
 		title = str(sys.argv[2])
 		say = getcustomtitle(title)
