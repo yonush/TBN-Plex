@@ -133,3 +133,4 @@ getallcollections,Scans your movie library and compares it to themoviedb to find
 getlikemovie,Checks themoviedb for similar movies to the given movie. NOTE: supports "-b" flag to create a smartblock using the results,getlikemovie "Lethal Weapon" -b
 getcollection,Gets the Collection associated with a given movie. NOTE: supports "-b" flag to create a smartblock using the results and "-p" to create a smartplaylist on your Plex server,getcollection "Die Hard" -p
 availableactions,Lists the actions supported by the system.py file,availableactions -l
+playspshow,Plays a specifiec episode for the given show. Format show season number episode number, playspshow Psych 4 15
