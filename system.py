@@ -28,6 +28,7 @@ global pcmd
 global pcount
 global ttlchk
 global commandcheck
+global xlib
 commandcheck = "no"
 
 ttlchk = ""
@@ -103,7 +104,8 @@ def plexlogin():
 				print ("\rSuccessfully logged into Plex cloud.\n")
 	
 				plex = user.resource(PLEXSVR).connect()
-			client = plex.client(PLEXCLIENT)
+			if ("changeclient" not in sys.argv):
+				client = plex.client(PLEXCLIENT)
 			LOGGEDIN = "YES"
 
 	except IndexError:
@@ -1550,7 +1552,7 @@ def addblock(name, title):
 			if ("ERROR" in title):
 				return title
 			xname = title
-			print (title)
+			#print (title)
 		if ("Quit." in title):
 			return ("User Quit. No action taken.")
 		if ("movie." in title) and ("random" not in title.lower()):
@@ -2741,7 +2743,7 @@ def epdetails(show, season, episode):
 def moviedetails(movie):
 	movie = titlecheck(movie)
 	movie = movie.replace("movie.","")
-	if (("Error" in movie) or (movie == "done")):
+	if (("ERROR:" in movie) or (movie == "done")):
 		return movie
 	plexlogin()
 	movie = plex.library.section('Movies').get(movie)
@@ -2858,11 +2860,30 @@ def moviedbcheck(movie):
 		
 
 def showdetails(show):
+	global xlib 
 	show = show.replace("'","''")
 	command = "SELECT * FROM TVshowlist WHERE TShow LIKE \"" + show + "\""
+	#command = "SELECT * FROM TVshowlist WHERE TShow LIKE \"FAIL\""
 	cur.execute(command)
 	if not cur.fetchone():
-		return ("Error: " + show + " not found. Check title and try again.")
+		#return ("Error: " + show + " not found. Check title and try again.")
+		show = titlecheck(show)
+		if (("Error" in show) or (show == "done")):
+			return show
+		plexlogin()
+		nshow = plex.library.section(xlib).get(show)
+		name = nshow.title
+		summary = nshow.summary
+		genres = nshow.genres
+		if not genres:
+			genres = "Update TBN-Plex DB to get this data."
+		rating = nshow.contentRating
+		duration = str(int(nshow.duration)/60000)
+		total = str(nshow.leafCount)
+		sayme = "For the show: " + name + "\nSummary: " + summary + "\nGenre: " + genres + "\nRating: " + rating + "\nDuration: " + str(duration) + " minutes\nNumber of Episodes: " + str(total)
+                return (sayme)
+		
+		
 	else:
 		cur.execute(command)
 		stuff = cur.fetchone()
@@ -2881,10 +2902,20 @@ def showdetails(show):
 		return (sayme)
 
 def movietagline(movie):
+	global xlib
 	command = "SELECT Tagline FROM Movies WHERE Movie LIKE \"" + movie + "\""
 	cur.execute(command)
 	if not cur.fetchone():
-		return ("Error: " + movie + " not found in DB. Please try again.")
+		movie = titlecheck(movie)
+		if (("Error:" in movie) or (movie == "done")):
+			return movie
+		movie = movie.replace("movie.","")
+		mve = plex.library.section(xlib).get(movie)
+		tag = mve.tagline
+		if not tag:
+			return ("The Move " + movie + " has no tagline.")
+		else:
+			return tag
 	else:
 		try:
 			cur.execute(command)
@@ -3424,8 +3455,9 @@ def deleteshow(show):
 def playshow(show):
 	#SECTION = "TV Shows"
 	oshow = show
-	show = titlecheck(show)
-	show = checkcustomtables(show)
+	if (("block." not in show) and ("custom." not in show) and ("marathon." not in show) and ("minithon." not in show) and ("holiday." not in show)):
+		show = titlecheck(show)
+		show = checkcustomtables(show)
 	if type(show) is tuple:
 		show = show[0].lower()
 	if "custom." in show:
@@ -5076,6 +5108,8 @@ def setupnext(title):
 	if ("CUSTOM." not in title):
 		if (("numb3rs" not in title.lower()) and ("se7en" not in title.lower())):
 			title = titlecheck(title).strip()
+			if ("ERROR:" in title):
+				return title
 	if "''" in title:
                 pass
         else:
@@ -5393,8 +5427,76 @@ def getsectiontitle(title):
                                                         say = lib.title
 	return say
 
+def spellchecker(title):
+	try:
+		d = enchant.Dict("en_US")
+	except ImportError:
+		print ("Enchant Library Not Found. Spell Checking Failed.")
+		return title
+	options = []
+	newt = ""
+	ccount = 0
+	fail = "no"
+	for word in title.split(" "):
+		if d.check(word) is True:
+			newt = newt + word + " "
+		else:
+			clist = d.suggest(word)
+			word = clist[ccount]
+			newt = newt + word + " "
+			fail = "yes"
+	return newt
+
+def addcustomtitle(ntitle, otitle):
+	ctitle = ntitle
+	ctitle = customtitlecheck(ctitle)
+	if ctitle.lower() == otitle.lower():
+		return ("ERROR: " + ntitle + " already maps to: " + otitle + "\n")
+	otitle = titlecheck(otitle)
+	if ("ERROR:" in otitle):
+		return otitle
+	otitle = otitle.replace("movie.","")
+	ntitle = ntitle.strip().lower()
+	otitle = otitle.strip().lower()
+	cur.execute("INSERT INTO CUSTOMTITLES VALUES (?,?)",(otitle, ntitle))
+	sql.commit()
+	return ("Successfully associated " + ntitle + " with: " + otitle + ".\n")
+
+def removecustomtitle(ctitle):
+	customtitlecheck(ctitle)
+	cur.execute("DELETE FROM CUSTOMTITLES WHERE ctitle LIKE \"" + ctitle.strip() + "\"")
+	sql.commit()
+	return ("Removed associations for: " + ctitle + ".\n")	
+
+def customtitlecheck(title):
+	title = title.lower()
+	command = "SELECT * FROM CUSTOMTITLES WHERE ctitle LIKE \"" + title + "\""
+	try:
+		cur.execute(command)
+	except sqlite3.OperationalError:
+		cur.execute("CREATE TABLE IF NOT EXISTS CUSTOMTITLES(otitle TEXT, ctitle TEXT)")
+		sql.commit()
+		print ("Sucessfully Added Needed CUSTOMTITLES Table.")
+	cur.execute(command)
+	if not cur.fetchone():
+		#print ("No Custom Title Found.")
+		return title
+	else:
+		cur.execute(command)
+		title = cur.fetchone()[0]
+		return title
+		
+
+
 def titlecheck(title):
+	global xlib
 	global ttlchk
+	global tccnt
+	title = customtitlecheck(title)
+	try:
+		tccnt
+	except Exception:
+		tccnt = 1
 	if "yes" not in ttlchk:
 		plexlogin()
 		otitle = title
@@ -5408,6 +5510,7 @@ def titlecheck(title):
 				xshow = video
 				if ((xshow.type == "show") and ("movie." not in oshow) and (xshow.title.lower() == oshow.lower())):
 					say = xshow.title
+					xlib = lib.title
 					#return xshow.title
 				elif ((xshow.type.lower() == "movie") and (xshow.title.lower() == cshow.lower())):
 					try:
@@ -5419,13 +5522,58 @@ def titlecheck(title):
 							if lib.key == video.librarySectionID:
 								if lib.title == "Movies":
 									say = "movie." + say
+								xlib = lib.title
 		try:
 			ttlchk = "yes"
 			return say
 		except NameError:
+			try:
+				print (say)
+				del say
+			except NameError:
+				pass
+			otitle = title
+			if tccnt == 2:
+				title = specialfixer(title)
+				tccnt = 3
+			elif tccnt == 1:
+				title = spellchecker(title).lower().strip()
+				tccnt = 0
+			elif tccnt == 0:
+				atitle = title
+				atitle = atitle.split(" ")
+				if atitle[0].lower == "the":
+					atitle.pop[0]
+				else:
+					atitle.insert(0,"the")
+				for item in atitle:
+					try:
+						ntitle = ntitle + item + " "
+					except NameError:
+						ntitle = item + " "
+				ntitle = ntitle.strip()
+				title = ntitle
+				del atitle
+				del ntitle
+				tccnt = 2
+			if tccnt <3:
+				ttlchk = "no"
+				#print ("Title Not Found. Trying: " + title + "\n")
+				oxtitle = title
+				title = titlecheck(title)
+				if ("ERROR:" not in title):
+					return title
+				if ("ERROR:" in title):
+					title = oxtitle
 			return ("ERROR: " + oshow + " NOT FOUND.\n")
 	else:
 		return title
+
+def specialfixer(title):
+	removeme = ["'",":","!",",","-"]
+	for itm in removeme:
+		title = title.replace(itm,"")
+	return (title)
 
 def didyoumeanboth(title):
 	#title = titlecheck(title).strip()
@@ -6100,9 +6248,16 @@ def nextep(show):
 	ssn = str(theshow[epnum].seasonNumber)
 	xep = str(theshow[epnum].index)
 	episode = episode.replace("''","'")
-	episode = "For the show " + show + ", Up next is Season " + ssn + ", Episode " + xep + ", " + episode
+	try:
+		episode = str(episode)
+	except Exception:
+		episode = episode.decode("utf8")
+		episode = str(episode)
+	try:
+		episode = "For the show " + str(show) + ", Up next is Season " + ssn + ", Episode " + xep + ", " + str(episode)
+	except Exception:
+		pass
 	episode = episode.rstrip()
-
 	return episode
 
 
@@ -6113,7 +6268,7 @@ def removeblock(block):
 		print (say + "\n\n")
 		block = str(input('Block: '))
 	if block in say:
-		print ("Removing the " + block + " block now.")
+		print ("Removing and recreating the " + block + " block now.")
 	else:
 		return ("Error, block not found to remove. Please try check and try again.")
 	bname = block.strip()
@@ -7263,6 +7418,10 @@ def getlikemovie(xmovie):
 		return ("Error: Nothing similar found to: " + xmovie + ".")
 
 def getcollection(xmovie):
+	xmovie = titlecheck(xmovie)
+	if ("ERROR: " in xmovie):
+		return xmovie
+	xmovie = xmovie.replace("movie.","")
 	global ttlchk
 	collection = []
 	collectionx = []
@@ -7290,7 +7449,7 @@ def getcollection(xmovie):
 
 	try:
 		movie = tmdb.Movies(mid)
-	except Exception:
+	except IndexError:
 		return ("Error:" + xmovie + " not found. Please try again.")
 	response = movie.info()
 	cid = response['belongs_to_collection']
@@ -7636,9 +7795,66 @@ def availableactions(actn):
 		actns.append(item[0])
 	return actns
 
+def trivia(movie):
+	movie = titlecheck(movie)
+        if ("ERROR: " in movie):
+                return movie
+        movie = movie.replace("movie.","")
+	try:
+		import imdb
+	except Exception:
+		return ("Error: You must install the imdbpy library to use this action.")
+	i = imdb.IMDb()
+	movie = movie.strip()
+	mvlst = i.search_movie(movie)
+	mve = mvlst[0]
+	i.update(mve)
+	i.update(mve, 'trivia')
+	tlist = mve['trivia']
+	min = 0
+	max = len(mve['trivia'])
+	rand = randint(min,max)
+	return (tlist[rand])
+
+def goofs(movie):
+	try:
+               import imdb
+        except Exception:
+               return ("Error: You must install the imdbpy library to use this action.")
+        i = imdb.IMDb()
+        movie = movie.strip()
+        mvlst = i.search_movie(movie)
+        mve = mvlst[0]
+	i.update(mve)
+        i.update(mve, 'all')
+        min = 0
+        max = len(mve['quotes'])
+        rand = randint(min,max)
+        return (mve['quotes'][rand])
+
+def faqs(movie):
+	movie = titlecheck(movie)
+        if ("ERROR: " in movie):
+                return movie
+        movie = movie.replace("movie.","")
+	try:
+               import imdb
+        except Exception:
+               return ("Error: You must install the imdbpy library to use this action.")
+        i = imdb.IMDb()
+        movie = movie.strip()
+        mvlst = i.search_movie(movie)
+        mve = mvlst[0]
+        i.update(mve)
+        i.update(mve, ['faqs'])
+        min = 0
+        max = len(mve['faqs'])
+        rand = randint(min,max)
+        return (mve['faqs'][rand])
+	
 
 def versioncheck():
-	version = "3.06a"
+	version = "3.07exp"
 	return version
 	
 
@@ -7669,6 +7885,18 @@ try:
                         say
                 except NameError:
                         say = "Sorry, but that entry was not found in the help table. Run \"updatehelp\" and try again if you have not updated recently."
+	elif ("trivia" in show):
+		try:
+			movie = sys.argv[2]
+			say = trivia(movie)
+		except IndexError:
+			say = "Error: You must enter a movie to use this action."
+	elif ("faqs" in show):
+                try:
+                        movie = sys.argv[2]
+                        say = faqs(movie)
+                except IndexError:
+                        say = "Error: You must enter a movie to use this action."
 	elif ("listcollections" in show):
 		try:
 			cname = str(sys.argv[2])
@@ -7897,12 +8125,28 @@ try:
                 say = setqueuetoplex(option)
                 if "Error" not in say:
                         say = "Queuetoplaylist Status has been set to: " + say + "."
-	elif ("titlecheck" in show):
+	elif (("titlecheck" in show) and ("customtitlecheck" not in show)):
 		show = str(sys.argv[2])
 		show = titlecheck(show)
 		sect = getsection(show)
 		say = show + ", Section: " + sect
+	elif ("customtitlecheck" in show):
+		show = sys.argv[2]
+		say = customtitlecheck(show)
 
+	elif ("addcustomtitle" in show):
+		try:
+			ntitle = str(sys.argv[2])
+			otitle = str(sys.argv[3])
+			say = addcustomtitle(ntitle,otitle)
+		except IndexError:
+			say = "ERROR: You must provide both a new title and an original title to use this action."
+	elif ("removecustomtitle" in show):
+		try:
+			ctitle = str(sys.argv[2])
+			say = removecustomtitle(ctitle)
+		except IndexError:
+			say = "Error: You must supply a custom title to use this action."
 	elif ("checkholidays" in show):
 		try:
 			holiday = str(sys.argv[2])
