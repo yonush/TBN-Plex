@@ -134,3 +134,8 @@ getlikemovie,Checks themoviedb for similar movies to the given movie. NOTE: supp
 getcollection,Gets the Collection associated with a given movie. NOTE: supports "-b" flag to create a smartblock using the results and "-p" to create a smartplaylist on your Plex server,getcollection "Die Hard" -p
 availableactions,Lists the actions supported by the system.py file,availableactions -l
 playspshow,Plays a specifiec episode for the given show. Format show season number episode number, playspshow Psych 4 15
+customtitlecheck,Checks if the given custom title exists,customtitlecheck "Ghostbusters 3"
+addcustomtitle,Adds a custom title association for an original title,addcustomtitle "Ghostbusters 3" "Ghostbusters(2016)"
+removecustomtitle,Removes the given custom title association,removecustomtitle "Ghostbusters 3"
+trivia,Gets a trivia item for the given movie,trivia "The Matrix"
+faqs,Gets a FAQ for the given movie,faqs "The Matrix"
