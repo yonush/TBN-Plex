@@ -8,11 +8,21 @@ user = getpass.getuser()
 DEFAULTDIR = homedir
 
 MYDB = DEFAULTDIR + "myplex.db"
+sql = sqlite3.connect(MYDB)
+cur = sql.cursor()
+
+cur.execute("SELECT State FROM States WHERE Option LIKE \"SLEEPTIME\"")
+if not cur.fetchone():
+        cur.execute("INSERT INTO States VALUES (?,?)",("SLEEPTIME","20"))
+        sql.commit()
+        cur.execute("SELECT State FROM States WHERE Option LIKE\"SLEEPTIME\"")
+else:
+        cur.execute("SELECT State FROM States WHERE Option LIKE\"SLEEPTIME\"")
+SLEEPTIME = int(cur.fetchone()[0])
 
 def sessionstatus():
 	sql = sqlite3.connect(MYDB)
-        cur = sql.cursor()
-
+	cur = sql.cursor()
         cur.execute('SELECT setting FROM settings WHERE item LIKE \'PLEXSVR\'')
         PLEXSVR = cur.fetchone()
         PLEXSVR = PLEXSVR[0]
@@ -82,7 +92,6 @@ def sessionstatus():
 		return ("Unknown")
 
 def playstatus():
-	
 	sql = sqlite3.connect(MYDB)
 	cur = sql.cursor()
 	cur.execute('SELECT setting FROM settings WHERE item LIKE \'PLEXUN\'')
@@ -173,7 +182,7 @@ while True:
 				os.system(command)
 				command = "python /home/pi/hasystem/system.py playcheckstop"
 				os.system(command)
-				time.sleep(20)
+				time.sleep(SLEEPTIME)
 			else:
 				sql = sqlite3.connect(MYDB)
 				cur = sql.cursor()
@@ -185,8 +194,8 @@ while True:
 				sql.close()
 				command = "python " + DEFAULTDIR + "/system.py startnextprogram"
 				os.system(command)
-				time.sleep(20)
-	except Exception:
+				time.sleep(SLEEPTIME)
+	except IndexError:
 		print ("Timeout Error. Checking again next pass.")
 	time.sleep(10)
 

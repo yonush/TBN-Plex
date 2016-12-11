@@ -33,7 +33,7 @@ commandcheck = "no"
 
 ttlchk = ""
 
-SLEEPTIME = 20 
+#SLEEPTIME = 20 
 try:
 	input = raw_input
 except NameError:
@@ -42,6 +42,15 @@ except NameError:
 MYDB = homedir + "myplex.db"
 sql = sqlite3.connect(MYDB)
 cur = sql.cursor()
+
+cur.execute("SELECT State FROM States WHERE Option LIKE \"SLEEPTIME\"")
+if not cur.fetchone():
+	cur.execute("INSERT INTO States VALUES (?,?)",("SLEEPTIME","20"))
+	sql.commit()
+	cur.execute("SELECT State FROM States WHERE Option LIKE\"SLEEPTIME\"")
+else:
+	cur.execute("SELECT State FROM States WHERE Option LIKE\"SLEEPTIME\"")
+SLEEPTIME = int(cur.fetchone()[0])
 
 global PLEXSVR
 global PLEXCLIENT
@@ -110,6 +119,14 @@ def plexlogin():
 
 	except IndexError:
 		print ("Error getting necessary plex api variables. Run system_setup.py.")
+
+def setsleeptime(num):
+	num = str(num)
+	cur.execute("DELETE FROM States WHERE Option LIKE \"SLEEPTIME\"")
+	sql.commit()
+	cur.execute("INSERT INTO States VALUES (?,?)",("SLEEPTIME",num))
+	sql.commit()
+	return ("SLEEPTIME setting has been adjusted to: " + num + ".\n")
 
 def changeplexip():
 	plexip = str(raw_input('Plex Server IP: '))
@@ -7854,7 +7871,7 @@ def faqs(movie):
 	
 
 def versioncheck():
-	version = "3.07exp"
+	version = "3.07exp2"
 	return version
 	
 
@@ -7897,6 +7914,12 @@ try:
                         say = faqs(movie)
                 except IndexError:
                         say = "Error: You must enter a movie to use this action."
+	elif ("setsleeptime" in show):
+		try:
+			num = str(sys.argv[2])
+			say = setsleeptime(num)
+		except IndexError:
+			say = "ERROR: You must specify a Intiger to use this command."
 	elif ("listcollections" in show):
 		try:
 			cname = str(sys.argv[2])
