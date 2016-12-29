@@ -1,4 +1,4 @@
-whatupnext,Lists the item that will play next.,whatupnext
+whatupnext,Lists the item that will play next. Can Optionall add "-q" flag to specify next up in the queue when not in nomral mode.,whatupnext
 whatsafterthat,Lists the second item in the queue.Note: Only works in normal mode.,whatsafterthat
 startnextprogram,Starts the next program.,startnextprogram
 queueshow,Lists the contents of the queue.,queueshow
