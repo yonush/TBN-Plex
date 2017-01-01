@@ -5,7 +5,7 @@ import getpass
 
 user = getpass.getuser()
 
-DEFAULTDIR = homedir
+DEFAULTDIR = "/home/" + user + "/hasystem/"
 
 MYDB = DEFAULTDIR + "myplex.db"
 sql = sqlite3.connect(MYDB)
@@ -23,13 +23,13 @@ SLEEPTIME = int(cur.fetchone()[0])
 def sessionstatus():
 	sql = sqlite3.connect(MYDB)
 	cur = sql.cursor()
-        cur.execute('SELECT setting FROM settings WHERE item LIKE \'PLEXSVR\'')
-        PLEXSVR = cur.fetchone()
-        PLEXSVR = PLEXSVR[0]
+	cur.execute('SELECT setting FROM settings WHERE item LIKE \'PLEXSVR\'')
+	PLEXSVR = cur.fetchone()
+	PLEXSVR = PLEXSVR[0]
 
-        cur.execute('SELECT setting FROM settings WHERE item LIKE \'PLEXCLIENT\'')
-        PLEXCLIENT = cur.fetchone()
-        PLEXCLIENT = PLEXCLIENT[0]
+	cur.execute('SELECT setting FROM settings WHERE item LIKE \'PLEXCLIENT\'')
+	PLEXCLIENT = cur.fetchone()
+	PLEXCLIENT = PLEXCLIENT[0]
 
 	cur.execute('SELECT setting FROM settings WHERE item LIKE \'PLEXSERVERIP\'')
 	PLEXSERVERIP = cur.fetchone()
@@ -44,7 +44,7 @@ def sessionstatus():
 	PLEXSERVERTOKEN = PLEXSERVERTOKEN[0]
 
 
-        from plexapi.myplex import MyPlexAccount
+	from plexapi.myplex import MyPlexAccount
 	try:
 		from plexapi.server import PlexServer
 		baseurl = 'http://' + PLEXSERVERIP + ':' + PLEXSERVERPORT
@@ -94,13 +94,6 @@ def sessionstatus():
 def playstatus():
 	sql = sqlite3.connect(MYDB)
 	cur = sql.cursor()
-	cur.execute('SELECT setting FROM settings WHERE item LIKE \'PLEXUN\'')
-	PLEXUN = cur.fetchone()
-	PLEXUN = PLEXUN[0]
-
-	cur.execute('SELECT setting FROM settings WHERE item LIKE \'PLEXPW\'')
-	PLEXPW = cur.fetchone()
-	PLEXPW = PLEXPW[0]
 
 	cur.execute('SELECT setting FROM settings WHERE item LIKE \'PLEXSVR\'')
 	PLEXSVR = cur.fetchone()
@@ -111,28 +104,41 @@ def playstatus():
 	PLEXCLIENT = PLEXCLIENT[0]
 
 	cur.execute('SELECT setting FROM settings WHERE item LIKE \'PLEXSERVERIP\'')
-        PLEXSERVERIP = cur.fetchone()
-        PLEXSERVERIP = PLEXSERVERIP[0]
+	PLEXSERVERIP = cur.fetchone()
+	PLEXSERVERIP = PLEXSERVERIP[0]
 
-        cur.execute('SELECT setting FROM settings WHERE item LIKE \'PLEXSERVERPORT\'')
-        PLEXSERVERPORT = cur.fetchone()
-        PLEXSERVERPORT = PLEXSERVERPORT[0]
+	cur.execute('SELECT setting FROM settings WHERE item LIKE \'PLEXSERVERPORT\'')
+	PLEXSERVERPORT = cur.fetchone()
+	PLEXSERVERPORT = PLEXSERVERPORT[0]
 
-        cur.execute('SELECT setting FROM settings WHERE item LIKE \'PLEXSERVERTOKEN\'')
-        PLEXSERVERTOKEN = cur.fetchone()
-        PLEXSERVERTOKEN = PLEXSERVERTOKEN[0]
+	cur.execute('SELECT setting FROM settings WHERE item LIKE \'PLEXSERVERTOKEN\'')
+	PLEXSERVERTOKEN = cur.fetchone()
+	PLEXSERVERTOKEN = PLEXSERVERTOKEN[0]
 
-        from plexapi.myplex import MyPlexAccount
-        try:
-                from plexapi.server import PlexServer
-                baseurl = 'http://' + PLEXSERVERIP + ':' + PLEXSERVERPORT
-                token = PLEXSERVERTOKEN
-	
-                plex = PlexServer(baseurl, token)
-        except Exception:
+	from plexapi.myplex import MyPlexAccount
+	try:
+		from plexapi.server import PlexServer
+		baseurl = 'http://' + PLEXSERVERIP + ':' + PLEXSERVERPORT
+		token = PLEXSERVERTOKEN
+
+		plex = PlexServer(baseurl, token)
+	except Exception:
+		cur.execute('SELECT setting FROM settings WHERE item LIKE \'PLEXUN\'')
+		PLEXUN = cur.fetchone()
+		PLEXUN = PLEXUN[0]
+
+		try:
+			cur.execute('SELECT setting FROM settings WHERE item LIKE \'PLEXPW\'')
+			PLEXPW = cur.fetchone()
+			PLEXPW = PLEXPW[0]
+			import base64
+			PLEXPW = str(base64.b64decode(PLEXPW))
+		except Exception:
+			print ("Your Plex Password is temporarly needed to proceed:\n")
+			PLEXPW = str(getpass.getpass("Password: "))
+
 		user = MyPlexAccount.signin(PLEXUN, PLEXPW)
-                print ("Local Fail. Trying cloud access.")
-
+		print ("Local Fail. Trying cloud access.")
 		plex = user.resource(PLEXSVR).connect()
 	client = plex.client(PLEXCLIENT)
 
