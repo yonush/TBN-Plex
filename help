@@ -12,7 +12,7 @@ tvgenres,Lists available TV genres,tvgenres
 suggesttv,Suggests a show. Can optionally restrict by \"genre.\" or \"duration.\" or \"rating.\".,suggesttv genre.action
 suggestblock,Suggests a block from the available blocks.,suggestblock
 addsuggestion,Adds suggestion to the play queue.,addsuggestion
-skipthat,Skips the item up next.,skipthat
+skipthat,Skips the item up next. Note: Can use "-m" and "-t" flags to restrict next selection to "movies" or "tv shows".,skipthat
 skipafterthat,Skips the second item in the queue. Note: only supports normal mode.,skipafterthat
 whatispending,Lists what is in the pending(previously suggested) queue.,whatispending
 playme,Play a specific item,playme psych
