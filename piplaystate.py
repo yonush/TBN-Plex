@@ -39,17 +39,18 @@ def sessionstatus():
 	PLEXSERVERPORT = cur.fetchone()
 	PLEXSERVERPORT = PLEXSERVERPORT[0]
 
-	cur.execute('SELECT setting FROM settings WHERE item LIKE \'PLEXSERVERTOKEN\'')
-	PLEXSERVERTOKEN = cur.fetchone()
-	PLEXSERVERTOKEN = PLEXSERVERTOKEN[0]
+	#cur.execute('SELECT setting FROM settings WHERE item LIKE \'PLEXSERVERTOKEN\'')
+	#PLEXSERVERTOKEN = cur.fetchone()
+	#PLEXSERVERTOKEN = PLEXSERVERTOKEN[0]
 
 
 	from plexapi.myplex import MyPlexAccount
 	try:
 		from plexapi.server import PlexServer
 		baseurl = 'http://' + PLEXSERVERIP + ':' + PLEXSERVERPORT
-		token = PLEXSERVERTOKEN
-		plex = PlexServer(baseurl, token)
+		#token = PLEXSERVERTOKEN
+		#plex = PlexServer(baseurl, token)
+		plex = PlexServer(baseurl)
 		#print ("using local access.")
 	except Exception:
 		cur.execute('SELECT setting FROM settings WHERE item LIKE \'PLEXUN\'')
